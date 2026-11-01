@@ -1,0 +1,12 @@
+*.p12
+*.pfx
+*.key
+*.pem
+*.mobileconfig
+*.log
+.DS_Store
+.env
+.env.*
+**/ca-p12*
+**/ca-passphrase*
+node_modules/
