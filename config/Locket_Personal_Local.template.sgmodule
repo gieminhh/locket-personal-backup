@@ -1,0 +1,15 @@
+#!name=Locket Personal — local backup template
+#!desc=Caution: relative script paths may not work on every Shadowrocket version.
+#!author=Personal maintenance adaptation of @leekang
+
+[Header Rewrite]
+http-request ^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receipts$|subscribers\/?(.*)?$) header-del x-revenuecat-etag
+http-request ^https?:\/\/firebaseremoteconfig\.googleapis\.com\/.+ header-del if-none-match
+
+[Script]
+Locket_Header = type=http-request,pattern=^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receipts$|subscribers\/?(.*)?$),script-path=scripts/HeaderClean.js,timeout=60
+Locket_Gold = type=http-response,pattern=^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receipts$|subscribers\/?(.*)?$),script-path=scripts/Gold.js,requires-body=1,max-size=-1,timeout=60
+Locket_Custom = type=http-response,pattern=^https?:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/.*,script-path=scripts/RemoteConfig.js,requires-body=1,max-size=-1,timeout=60,argument=name=Personal&startDate=2024-02-14&hd=true
+
+[MITM]
+hostname = %APPEND% api.revenuecat.com, api.rc-backup.com, firebaseremoteconfig.googleapis.com
