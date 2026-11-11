@@ -1,5 +1,5 @@
 #!name=Locket Gold
-#!desc=Gold và 32 tag tiếng Việt với emoji và nền chuyển màu.
+#!desc=Gold, bộ captions Lee Kang và 32 tag tiếng Việt bổ sung.
 #!author=Personal maintenance adaptation of @leekang
 
 [Header Rewrite]
@@ -10,7 +10,7 @@ http-request ^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/loc
 [Script]
 Locket_Header = type=http-request,pattern=^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receipts$|subscribers\/?(.*)?$),script-path=https://raw.githubusercontent.com/gieminhh/locket-personal-backup/main/scripts/HeaderClean.js,timeout=60
 Locket_Gold = type=http-response,pattern=^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receipts$|subscribers\/?(.*)?$),script-path=https://raw.githubusercontent.com/gieminhh/locket-personal-backup/main/scripts/Gold.js,requires-body=1,max-size=-1,timeout=60
-Locket_Extra_Captions = type=http-response,pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/.+,script-path=https://raw.githubusercontent.com/gieminhh/locket-personal-backup/cae34c2bd6c9c1e36fa019f931e26626b55a4257/scripts/RemoteConfig.js,requires-body=true,max-size=-1,timeout=60,argument=captionPack=extras
+Locket_Extra_Captions = type=http-response,pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\/.+,script-path=https://raw.githubusercontent.com/gieminhh/locket-personal-backup/55b9b74e357e6e1f58b68e803bb294d542fa747a/scripts/LeeKangCaptions.js,requires-body=1,max-size=0,timeout=60,argument=name=LeeKang&startDate=2024-02-14&hd=true&frame=shinchan
 
 [MITM]
 hostname = %APPEND% api.revenuecat.com, api.rc-backup.com, firebaseremoteconfig.googleapis.com
