@@ -82,6 +82,94 @@
       }
     };
   }
+  function parseJsonArray(value) {
+    try {
+      var parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (e) { return null; }
+  }
+  function mergeCaptionSections(sections) {
+    var merged = [], bySection = Object.create(null), seen = Object.create(null);
+    sections.forEach(function (section) {
+      if (!section || !Array.isArray(section.items)) return;
+      section.items.forEach(function (item) {
+        if (!item || typeof item !== 'object') return;
+        var key = typeof item.overlay_id === 'string' ? item.overlay_id : null;
+        if (key && seen[key]) return;
+        if (key) seen[key] = true;
+        var title = section.section || 'Unsorted';
+        if (!bySection[title]) {
+          bySection[title] = {section: title, items: []};
+          merged.push(bySection[title]);
+        }
+        bySection[title].items.push(item);
+      });
+    });
+    return merged;
+  }
+  var extraPalettes = [
+    ['#591078', '#973672'], ['#193263', '#176A78'], ['#91223F', '#B44336'],
+    ['#4B317E', '#6450AD'], ['#1D5044', '#25775D'], ['#713621', '#9E541F'],
+    ['#422B57', '#A13667'], ['#18344C', '#385D83']
+  ];
+  var extraGroups = [
+    ['🤡 Cà khịa & Báo đời', [
+      ['warranty', 'Cái nết có bảo hành k', '🧾'],
+      ['release', 'Ủa nay được thả ra hả', '🚪'],
+      ['nobody_asked', 'Ai hỏi mà kể nhiệt vậy', '🗣️'],
+      ['believe', 'Coi chừng t tưởng thiệt', '🫵'],
+      ['witness', 'Đứng đó cho có nhân chứng', '🧍'],
+      ['kind', 'T hiền tại chưa tới lượt', '😇'],
+      ['receipt', 'Xin cái biên lai nha', '🧾'],
+      ['gossip', 'Hóng thôi, đừng tag t', '🍿']
+    ]],
+    ['💅 Slay & Hết cứu', [
+      ['camera', 'Chụp xong xin lỗi cam', '📸'],
+      ['mercy', 'Mặt này xin tha', '🫣'],
+      ['colors', 'Tính làm màu mà hết màu', '🎭'],
+      ['confidence', 'Tự tin dù chưa có căn cứ', '🧠'],
+      ['taste', 'T hơi khùng nhưng có gu', '💅'],
+      ['battery', 'Hết pin mà còn phải diễn', '🪫'],
+      ['buffering', 'Mặt tỉnh, não load', '⏳'],
+      ['angle', 'Góc này có thù với t', '🤳']
+    ]],
+    ['💌 In Love & Dỗi', [
+      ['hug', 'Ôm trước, nói sau', '🫂'],
+      ['sulk', 'Dỗi có thời hạn', '😤'],
+      ['miss', 'Nhớ thì nhớ, ai biểu', '🥺'],
+      ['reply', 'Rep lẹ, t sắp tự biên', '💬'],
+      ['bribe', 'Hối lộ bằng trà sữa', '🧋'],
+      ['heart', 'Tim yếu mà hay simp', '💘'],
+      ['wrong', 'Sai cũng phải dỗ t', '😗'],
+      ['together', 'Chụp chung cái coi', '📷']
+    ]],
+    ['💸 Deadline & Ví rỗng', [
+      ['deadline', 'Deadline có chân à', '🏃'],
+      ['wallet', 'Ví đang ở ẩn', '👛'],
+      ['payday', 'Lương ghé chơi rồi đi', '💸'],
+      ['coffee', 'Nạp cà phê mới nói', '☕'],
+      ['meeting', 'Họp xong muốn họp hồn', '👻'],
+      ['five_minutes', 'Năm phút nữa t làm', '⏰'],
+      ['submit', 'Nộp bài bằng niềm tin', '📚'],
+      ['balance', 'Số dư đang hướng nội', '💳']
+    ]]
+  ].map(function (group, groupIndex) {
+    return {
+      section: group[0],
+      items: group[1].map(function (tag, index) {
+        var colors = extraPalettes[(groupIndex + index) % extraPalettes.length];
+        return preset('personal_extra_' + tag[0], tag[1], index, tag[2], colors);
+      })
+    };
+  });
+  var serverSections = parseJsonArray(entries.overlay_items);
+  if (args.captionPack === 'extras') {
+    // Require the caption catalog before changing a shared Firebase endpoint.
+    if (!serverSections) { $done({}); return; }
+    entries.overlay_items = JSON.stringify(mergeCaptionSections(extraGroups.concat(serverSections)));
+    $done({body: JSON.stringify(obj)});
+    return;
+  }
   // Each line becomes one independent caption; IDs generated with unique slug prefix.
   // Stored in source for fully offline backup: no 3rd-party caption service needed.
   var groups = [
@@ -168,7 +256,7 @@
       'Chắc ngon','ăn cháo đá bát','ăn k nói có','ăn năng hối cải','ăn chay niệm phật'
     ]]
   ];
-  var personal = [], seen = {};
+  var personal = [];
   groups.forEach(function (group, gi) {
     var items = group[2].map(function (caption, idx) {
       var id = 'personal_' + gi + '_' + idx;
@@ -190,30 +278,11 @@
                  (hr >= 22 || hr < 5) ? 'Hội cú đêm 🦉' : 'Hôm nay phải vui ✨';
   addDynamic('personal_time', hourText, '✨');
   personal.unshift({section: '⏱️ Thời gian thực', items: dynamic});
-  // Preserve original server sections and individual caption entries by ID.
-  function parseJsonArray(s) {
-    try { var v = typeof s === 'string' ? JSON.parse(s) : s; return Array.isArray(v) ? v : []; }
-    catch (e) { return []; }
-  }
-  var serverSections = parseJsonArray(entries.overlay_items);
-  var merged = [], bySection = Object.create(null);
-  function pushItem(section, item) {
-    if (!item || typeof item !== 'object') return;
-    var key = typeof item.overlay_id === 'string' ? item.overlay_id : null;
-    if (key && seen[key]) return;
-    if (key) seen[key] = true;
-    var title = section || 'Unsorted';
-    if (!bySection[title]) { bySection[title] = {section: title, items: []}; merged.push(bySection[title]); }
-    bySection[title].items.push(item);
-  }
-  personal.concat(serverSections).forEach(function (s) {
-    if (!s || !Array.isArray(s.items)) return;
-    s.items.forEach(function (item) { pushItem(s.section, item); });
-  });
+  var merged = mergeCaptionSections(personal.concat(extraGroups, serverSections || []));
   var dynIds = ['standard','poll','review','music','location','weather','time',
                 'streak','custom','color_palette','quote'];
   dynamic.forEach(function (item) {dynIds.push(item.overlay_id.replace(/^caption:/, ''));});
-  parseJsonArray(entries.overlay_dynamic_captions).forEach(function (id) {
+  (parseJsonArray(entries.overlay_dynamic_captions) || []).forEach(function (id) {
     if (typeof id === 'string' && dynIds.indexOf(id) === -1) dynIds.push(id);
   });
   Object.assign(entries, {
