@@ -1,5 +1,5 @@
 #!name=Locket Gold
-#!desc=Gold rules from the personal Locket backup.
+#!desc=Gold và 32 tag tiếng Việt với emoji và nền chuyển màu.
 #!author=Personal maintenance adaptation of @leekang
 
 [Header Rewrite]
@@ -8,6 +8,7 @@ http-request ^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receip
 [Script]
 Locket_Header = type=http-request,pattern=^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receipts$|subscribers\/?(.*)?$),script-path=https://raw.githubusercontent.com/gieminhh/locket-personal-backup/main/scripts/HeaderClean.js,timeout=60
 Locket_Gold = type=http-response,pattern=^https?:\/\/(api\.revenuecat\.com|api\.rc-backup\.com)\/.+\/(receipts$|subscribers\/?(.*)?$),script-path=https://raw.githubusercontent.com/gieminhh/locket-personal-backup/main/scripts/Gold.js,requires-body=1,max-size=-1,timeout=60
+Locket_Extra_Captions = type=http-response,pattern=^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/.*,script-path=https://raw.githubusercontent.com/gieminhh/locket-personal-backup/f87cb67c5c9b8a866b16db0aa0976407094f0d03/scripts/RemoteConfig.js,requires-body=1,max-size=-1,timeout=60,argument=captionPack=extras
 
 [MITM]
-hostname = %APPEND% api.revenuecat.com, api.rc-backup.com
+hostname = %APPEND% api.revenuecat.com, api.rc-backup.com, firebaseremoteconfig.googleapis.com
