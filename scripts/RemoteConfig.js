@@ -4,13 +4,27 @@
 // Requires an app version that understands overlay_items / overlay_dynamic_captions.
 (function () {
   'use strict';
+  var args = parseArgs(typeof $argument === 'undefined' ? '' : $argument);
+  var extrasOnly = args.captionPack === 'extras';
+  var locketFetch = typeof $request !== 'undefined' && $request &&
+    /^https:\/\/firebaseremoteconfig\.googleapis\.com\/v1\/projects\/locket-4252a\//.test($request.url || '');
+  function logCaptionStatus(status) {
+    if (extrasOnly && locketFetch && typeof console !== 'undefined' && typeof console.log === 'function') {
+      console.log('[Locket Captions] ' + status);
+    }
+  }
   if (typeof $response === 'undefined' || !$response || typeof $response.body !== 'string') {
+    logCaptionStatus('skipped: no response body');
     $done({}); return;
   }
   var obj;
-  try { obj = JSON.parse($response.body); } catch (e) { $done({}); return; }
+  try { obj = JSON.parse($response.body); } catch (e) {
+    logCaptionStatus('skipped: invalid JSON');
+    $done({}); return;
+  }
   if (!obj || typeof obj !== 'object' || Array.isArray(obj) ||
-      !obj.entries || typeof obj.entries !== 'object' || Array.isArray(obj.entries)) {
+      obj.error || !obj.entries || typeof obj.entries !== 'object' || Array.isArray(obj.entries)) {
+    logCaptionStatus(obj && obj.state === 'NO_CHANGE' ? 'skipped: NO_CHANGE' : 'skipped: no config entries');
     $done({}); return; // Do not replace malformed/error Remote Config with a new object.
   }
   var entries = obj.entries;
@@ -31,7 +45,6 @@
     });
     return out;
   }
-  var args = parseArgs(typeof $argument === 'undefined' ? '' : $argument);
   var name = String(args.name || 'Personal').slice(0, 48);
   var hd = args.hd !== 'false' && args.hd !== false;
   var now = new Date();
@@ -163,10 +176,16 @@
     };
   });
   var serverSections = parseJsonArray(entries.overlay_items);
-  if (args.captionPack === 'extras') {
-    // Require the caption catalog before changing a shared Firebase endpoint.
-    if (!serverSections) { $done({}); return; }
-    entries.overlay_items = JSON.stringify(mergeCaptionSections(extraGroups.concat(serverSections)));
+  if (extrasOnly) {
+    // Only seed a missing catalog on a full update from Locket's own project.
+    var canSeedCatalog = locketFetch && obj.state === 'UPDATE' &&
+      !Object.prototype.hasOwnProperty.call(entries, 'overlay_items');
+    if (obj.state === 'NO_CHANGE' || (!serverSections && !canSeedCatalog)) {
+      logCaptionStatus('skipped: no fresh caption catalog');
+      $done({}); return;
+    }
+    entries.overlay_items = JSON.stringify(mergeCaptionSections(extraGroups.concat(serverSections || [])));
+    logCaptionStatus('applied 32 tags');
     $done({body: JSON.stringify(obj)});
     return;
   }
